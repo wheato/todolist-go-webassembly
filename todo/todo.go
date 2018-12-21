@@ -9,7 +9,7 @@ import (
 )
 
 type TodoList struct{
-	Items []TodoItem
+	Items []*TodoItem
 }
 
 type TodoItem struct{
@@ -49,9 +49,9 @@ func jsAddHandler(args []js.Value) {
 	text := inputDom.Get("value").String()
 	if len(text) > 0 {
 		tl.AddTodoItem(text)
+		inputDom.Set("value", "")
 	}
 	html := tl.Render()
-	fmt.Println(html)
 	listDom.Set("innerHTML", html)
 }
 
@@ -63,35 +63,40 @@ func jsToggleHandler(args []js.Value) {
 		id, _ := strconv.ParseInt(el.Get("dataset").Get("index").String(), 10, 32)
 		tl.ToggleStatus(int32(id))
 		html := tl.Render()
-		fmt.Println(html)
 		listDom.Set("innerHTML", html)
 	}
 }
 
+// NewTodo will Create A Todo
 func NewTodo(text string, id int32) TodoItem {
 	return TodoItem{ Compeleted: false, Text: text, ID: id }
 }
 
+// AddTodoItem could add a todoItem to TodoList
 func (tl *TodoList) AddTodoItem(text string) TodoItem{
 	newItem := NewTodo(text, int32(len(tl.Items)))
-	tl.Items = append(tl.Items, newItem)
+	tl.Items = append(tl.Items, &newItem)
 	return newItem
 }
 
-func (tl TodoList) GetById(id int32) *TodoItem {
+// GetByID could find a todoItem by Id
+func (tl TodoList) GetByID(id int32) *TodoItem {
 	for _, item := range tl.Items{
 		if item.ID == id {
-			return &item
+			return item
 		}
 	}
 	return &TodoItem{}
 }
 
+// ToggleStatus switch the todoItem compeleted
 func (tl TodoList) ToggleStatus(id int32) {
-	target := tl.GetById(id)
+	target := tl.GetByID(id)
 	target.Compeleted = !target.Compeleted
+	fmt.Printf("%v - %s\n", target.Compeleted, target.Text)
 }
 
+// Render compile template to string
 func (tl *TodoList) Render() string{
 	var html bytes.Buffer
 	todoList, _ := template.New("TodoList").Parse(templ)
